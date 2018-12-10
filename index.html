@@ -10,14 +10,56 @@
 </head>
 <body>
 
-<canvas id="myCanvas" width="480" height="320"></canvas>
+<style type="text/css">
+html, body {
+  width:  100%;
+  height: 100%;
+  margin: 0px;
+}
+</style>
+
+<canvas id="astors"></canvas>
 
 <script>
-// JavaScript code goes here
+const DEG_TO_RAD = Math.PI / 180;
+const RAD_TO_DEG = 180 / Math.PI;
+
+var canvas = document.getElementById("astors");
+canvas.width  = window.innerWidth;
+canvas.height = window.innerHeight;
+
+function Vector(magnitude, direction) {
+	this.magnitude =  magnitude;
+	this.direction = direction;
+	this.x = this.magnitude * Math.cos( DEG_TO_RAD * this.direction );
+	this.y = this.magnitude * Math.sin( DEG_TO_RAD * this.direction );
+	this.add = function (other) {
+		var sx = this.x,
+		    sy = this.y;
+
+		var rx = sx + other.x;
+		var ry = sy + other.y;
+
+		var magnitude = Math.sqrt( (rx * rx) + (ry * ry) );
+		var direction = 0;
+		if (magnitude == 0 || ry == 0) {
+			direction = this.direction;
+		} else {
+			direction = Math.asin( ry / magnitude ) * RAD_TO_DEG;
+		}
+
+		return new Vector(magnitude, direction);
+	};
+}
 var ship = {
 	x: 75,
 	y: 50,
-	rotation: 0,
+	// the rotated angle of the ship
+	rotation: 180,
+	// the direction that the ship is traveling in
+	direction: 180,
+	// the speed of the movement
+	speed: 0,
 	draw: function(ctx) {
 		var x = this.x,
 		    y = this.y,
@@ -25,33 +67,69 @@ var ship = {
 
 		ctx.globalCompositeOperation = 'destination-over';
 		ctx.font = '12px sans-serif';
-		ctx.fillText('x = ' + x + ' y = ' + y + ' rotation = ' + rotation, 12, 12);
+		ctx.fillText(
+				   'x = ' + x
+				+ ' y = ' + y 
+				+ ' rotation = ' + rotation.toFixed(2)
+				+ ' speed = ' + this.speed.toFixed(2)
+				+ ' direction = ' + this.direction.toFixed(2), 12, 12);
 		
 		ctx.save();
 
 		ctx.translate( x, y );
-		ctx.rotate( rotation );
+		ctx.rotate( DEG_TO_RAD * rotation );
 
 		ctx.beginPath();
-    		ctx.moveTo(-25, 0);
-    		ctx.lineTo(25, -20);
-    		ctx.lineTo(5, 0);
-    		ctx.lineTo(25, 20);
+    		ctx.moveTo(25, 0);
+    		ctx.lineTo(-25, -20);
+    		ctx.lineTo(-5, 0);
+    		ctx.lineTo(-25, 20);
 		ctx.closePath();
     		ctx.stroke();
 
 		ctx.restore();
+	},
+	move: function() {
+		var x = this.x,
+		    y = this.y,
+		    direction = this.direction,
+		    speed = this.speed;
+
+		this.x = x + ( speed * Math.cos( DEG_TO_RAD * direction ) );
+		this.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
+	},
+	thrust : function(direction, amount) {
+		var thrustVector = new Vector(amount, direction);
+		var shipVector = new Vector(this.speed, this.direction);
+
+		var newShipVector = shipVector.add(thrustVector);
+
+		this.speed = newShipVector.magnitude;
+		this.direction = newShipVector.direction;
 	}
 }
-
+function init() {
+	document.addEventListener('keydown', (event) => {
+		const keyName = event.key;
+		if (keyName == 'ArrowRight') {
+			ship.rotation+=3;
+		}
+		if (keyName == 'ArrowLeft') {
+			ship.rotation-=3;
+		}
+		if (keyName == 'ArrowUp') {
+			ship.thrust(ship.rotation, 1);
+		}
+	});
+}
 function run() {
-	var canvas = document.getElementById("myCanvas");
 	var ctx = canvas.getContext("2d");
 
-	ctx.clearRect(0, 0, 300, 300);
-	ship.draw(ctx)
-	ship.rotation++;
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	ship.move();
+	ship.draw(ctx);
 }
+init();
 setInterval(run, 10);
 
 </script>
