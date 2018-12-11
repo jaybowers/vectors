@@ -42,7 +42,7 @@ function Vector(magnitude, direction) {
 		if (magnitude == 0 || ry == 0) {
 			direction = this.direction;
 		} else {
-			direction = Math.asin( ry / magnitude ) * RAD_TO_DEG;
+			direction = Math.atan2( ry, rx ) * RAD_TO_DEG;
 		}
 
 		return new Vector(magnitude, direction);
