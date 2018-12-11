@@ -21,10 +21,11 @@
 const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;
 
+// The maximum is inclusive and the minimum is inclusive 
 function getRandomIntInclusive(min, max) {
-  min = Math.ceil(min);
-  max = Math.floor(max);
-  return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive 
+  var min = Math.ceil(min);
+  var max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min;
 }
 function Keys() {
 	this.keys_pressed = new Set();
@@ -55,12 +56,7 @@ function Debug()  {
 			   'canvas.height = ' + canvas.height
 			+ ' canvas.width = ' + canvas.width,
 			12, 12);
-			for (var i = 0; i < objects.length; i++) {
-				var object = objects[i];
-				if (object.debug) {
-					object.debug(ctx);
-				}
-			}
+			call(objects, o => o.debug, o => o.debug(ctx));
 		}
 	} 
 }
@@ -250,30 +246,18 @@ function init() {
 }
 function run() {
 	var ctx = canvas.getContext("2d");
-
-	for (var i = 0; i < objects.length; i++) {
-		var object = objects[i];
-		if (object.onKeys) {
-			object.onKeys(keys);
-		}
-	}
-
-	for (var i = 0; i < objects.length; i++) {
-		var object = objects[i];
-		if (object.move) {
-			object.move();
-		}
-	}
-
+	call(objects, o => o.onKeys, o => o.onKeys(keys));
+	call(objects, o => o.move, o => o.move());
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+	call(objects, o => o.draw, o => o.draw(ctx));
+}
+function call(objects, pred, callback) {
 	for (var i = 0; i < objects.length; i++) {
 		var object = objects[i];
-		if (object.draw) {
-			object.draw(ctx);
+		if (pred(object)) {
+			callback(object);
 		}
-	}
-
+	}	
 }
 
 var canvas = document.getElementById("astors");
