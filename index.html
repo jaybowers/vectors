@@ -2,21 +2,18 @@
 <html>
 <head>
     <meta charset="utf-8" />
-    <title>Gamedev Canvas Workshop</title>
+    <title>Vector Ship</title>
     <style>
     	* { padding: 0; margin: 0; }
     	canvas { background: #eee; display: block; margin: 0 auto; }
+    	html, body {
+  			width:  100%;
+  			height: 100%;
+  			margin: 0px;
+		}
     </style>
 </head>
 <body>
-
-<style type="text/css">
-html, body {
-  width:  100%;
-  height: 100%;
-  margin: 0px;
-}
-</style>
 
 <canvas id="astors"></canvas>
 
@@ -68,8 +65,8 @@ var ship = {
 		ctx.globalCompositeOperation = 'destination-over';
 		ctx.font = '12px sans-serif';
 		ctx.fillText(
-				   'x = ' + x
-				+ ' y = ' + y 
+				   'x = ' + x.toFixed(1)
+				+ ' y = ' + y.toFixed(1)
 				+ ' rotation = ' + rotation.toFixed(2)
 				+ ' speed = ' + this.speed.toFixed(2)
 				+ ' direction = ' + this.direction.toFixed(2), 12, 12);
@@ -99,13 +96,18 @@ var ship = {
 		this.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
 	},
 	thrust : function(direction, amount) {
-		var thrustVector = new Vector(amount, direction);
-		var shipVector = new Vector(this.speed, this.direction);
+		if (this.speed < 1) {
+			this.speed = amount;
+			this.direction = direction;
+		} else {
+			var thrustVector = new Vector(amount, direction);
+			var shipVector = new Vector(this.speed, this.direction);
 
-		var newShipVector = shipVector.add(thrustVector);
+			var newShipVector = shipVector.add(thrustVector);
 
-		this.speed = newShipVector.magnitude;
-		this.direction = newShipVector.direction;
+			this.speed = newShipVector.magnitude;
+			this.direction = newShipVector.direction;
+		}
 	}
 }
 function init() {
