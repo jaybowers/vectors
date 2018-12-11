@@ -21,33 +21,48 @@
 const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;
 
-var canvas = document.getElementById("astors");
-canvas.width  = window.innerWidth;
-canvas.height = window.innerHeight;
-
-var debug = {
-	draw: function(ctx) {
-		ctx.fillText(
-		   'canvas.height = ' + canvas.height
-		+ ' canvas.width = ' + canvas.width,
-		12, 12);
-	} 
+function getRandomIntInclusive(min, max) {
+  min = Math.ceil(min);
+  max = Math.floor(max);
+  return Math.floor(Math.random() * (max - min + 1)) + min; //The maximum is inclusive and the minimum is inclusive 
 }
-var keys = {
-	keys_pressed: new Set(),
-	init: function() {
+function Keys() {
+	this.keys_pressed = new Set();
+	this.init = function() {
 		document.addEventListener('keydown', (event) => {
-//			console.log(event.type + ' ' + event.key);
+			console.log(event.type + ' ' + event.key);
 			this.keys_pressed.add(event.key);
 		});
 		document.addEventListener('keyup', (event) => {
-//			console.log(event.type + ' ' + event.key);
+			console.log(event.type + ' ' + event.key);
 			this.keys_pressed.delete(event.key);
 		});
-	},
-	pressed: function(key) {
+	};
+	this.pressed = function(key) {
 		return this.keys_pressed.has(key);
 	}
+}
+function Debug()  {
+	this.on = false;
+	this.onKeys = function (keys) {
+		if (keys.pressed('d')) {
+			this.on = ! this.on;
+		}
+	}
+	this.draw = function(ctx) {
+		if (this.on) {
+			ctx.fillText(
+			   'canvas.height = ' + canvas.height
+			+ ' canvas.width = ' + canvas.width,
+			12, 12);
+			for (var i = 0; i < objects.length; i++) {
+				var object = objects[i];
+				if (object.debug) {
+					object.debug(ctx);
+				}
+			}
+		}
+	} 
 }
 function Vector(magnitude, direction) {
 	this.magnitude =  magnitude;
@@ -67,25 +82,28 @@ function Vector(magnitude, direction) {
 		return new Vector(magnitude, direction);
 	};
 }
-function Asteroid(x, y, magnitude) {
-	this.x = x;
-	this.y = y;
-	this.magnitude = magnitude;
-
-	function draw(ctx) {
-
-	}
-}
-var ship = {
-	x: Math.abs( canvas.width / 2),
-	y: Math.abs( canvas.height / 2),
+function Asteroid() {
+	this.x = getRandomIntInclusive( 0, canvas.width );
+	this.y = getRandomIntInclusive( 0, canvas.height );
 	// the rotated angle of the ship
-	rotation: 180,
+	this.rotation = getRandomIntInclusive( 0, 360 );
 	// the direction that the ship is traveling in
-	direction: 180,
+	this.direction = getRandomIntInclusive( 0, 360 );
 	// the speed of the movement
-	speed: 0,
-	draw: function(ctx) {
+	this.speed = Math.random();
+
+	this.debug = function(ctx) {
+		ctx.save();
+		ctx.translate( this.x, this.y );
+		ctx.fillText(
+				   'x = ' + this.x.toFixed(1)
+				+ ' y = ' + this.y.toFixed(1)
+				+ ' rotation = ' + this.rotation.toFixed(2)
+				+ ' speed = ' + this.speed.toFixed(2)
+				+ ' direction = ' + this.direction.toFixed(2), -50, 50);
+		ctx.restore();
+	}
+	this.draw = function(ctx) {
 		var x = this.x,
 		    y = this.y,
 		    rotation = this.rotation;
@@ -96,25 +114,19 @@ var ship = {
 		ctx.save();
 
 		ctx.translate( x, y );
-		ctx.fillText(
-				   'x = ' + x.toFixed(1)
-				+ ' y = ' + y.toFixed(1)
-				+ ' rotation = ' + rotation.toFixed(2)
-				+ ' speed = ' + this.speed.toFixed(2)
-				+ ' direction = ' + this.direction.toFixed(2), -50, 50);
 		ctx.rotate( DEG_TO_RAD * rotation );
 
 		ctx.beginPath();
-    		ctx.moveTo(25, 0);
-    		ctx.lineTo(-25, -20);
-    		ctx.lineTo(-5, 0);
-    		ctx.lineTo(-25, 20);
+		ctx.moveTo(25, 25);
+		ctx.lineTo(-25, 25);
+		ctx.lineTo(-25, -25);
+		ctx.lineTo(25, -25);
 		ctx.closePath();
-    		ctx.stroke();
+		ctx.stroke();
 
 		ctx.restore();
-	},
-	move: function() {
+	}
+	this.move = function() {
 		var x = this.x,
 		    y = this.y,
 		    direction = this.direction,
@@ -135,8 +147,95 @@ var ship = {
 		if (this.y < 0) {
 			this.y = canvas.height;
 		}
+		this.rotation--;
 	},
-	thrust : function(direction, amount) {
+	this.thrust = function(direction, amount) {
+		var thrustVector = new Vector(amount, direction);
+		var shipVector = new Vector(this.speed, this.direction);
+
+		var newShipVector = shipVector.add(thrustVector);
+
+		this.speed = newShipVector.magnitude;
+		this.direction = newShipVector.direction;
+	}
+}
+function Ship() {
+	this.x = Math.abs( canvas.width / 2);
+	this.y = Math.abs( canvas.height / 2);
+	// the rotated angle of the ship
+	this.rotation = 180;
+	// the direction that the ship is traveling in
+	this.direction = 180;
+	// the speed of the movement
+	this.speed = 0;
+
+	this.debug = function(ctx) {
+		ctx.save();
+		ctx.translate( this.x, this.y );
+		ctx.fillText(
+				   'x = ' + this.x.toFixed(1)
+				+ ' y = ' + this.y.toFixed(1)
+				+ ' rotation = ' + this.rotation.toFixed(2)
+				+ ' speed = ' + this.speed.toFixed(2)
+				+ ' direction = ' + this.direction.toFixed(2), -50, 50);
+		ctx.restore();
+	}
+	this.draw = function(ctx) {
+		var x = this.x,
+		    y = this.y,
+		    rotation = this.rotation;
+
+		ctx.globalCompositeOperation = 'destination-over';
+		ctx.font = '12px sans-serif';
+		
+		ctx.save();
+		ctx.translate( x, y );
+		ctx.rotate( DEG_TO_RAD * rotation );
+
+		ctx.beginPath();
+		ctx.moveTo(25, 0);
+		ctx.lineTo(-25, -20);
+		ctx.lineTo(-5, 0);
+		ctx.lineTo(-25, 20);
+		ctx.closePath();
+    	ctx.stroke();
+
+		ctx.restore();
+	}
+	this.move = function() {
+		var x = this.x,
+		    y = this.y,
+		    direction = this.direction,
+		    speed = this.speed;
+
+		this.x = x + ( speed * Math.cos( DEG_TO_RAD * direction ) );
+		this.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
+
+		if (this.x > canvas.width) {
+			this.x = 0;
+		}
+		if (this.x < 0) {
+			this.x = canvas.width;
+		}
+		if (this.y > canvas.height) {
+			this.y = 0;
+		}
+		if (this.y < 0) {
+			this.y = canvas.height;
+		}
+	}
+	this.onKeys = function(keys) {
+		if (keys.pressed('ArrowRight')) {
+			this.rotation += 3;
+		}
+		if (keys.pressed('ArrowLeft')) {
+			this.rotation -= 3;
+		}
+		if (keys.pressed('ArrowUp')) {
+			this.thrust(this.rotation, 0.1);
+		}
+	}
+	this.thrust = function(direction, amount) {
 		var thrustVector = new Vector(amount, direction);
 		var shipVector = new Vector(this.speed, this.direction);
 
@@ -152,22 +251,45 @@ function init() {
 function run() {
 	var ctx = canvas.getContext("2d");
 
-	if (keys.pressed('ArrowRight')) {
-		ship.rotation+=3;
-	}
-	if (keys.pressed('ArrowLeft')) {
-		ship.rotation-=3;
-	}
-	if (keys.pressed('ArrowUp')) {
-		ship.thrust(ship.rotation, 0.1);
+	for (var i = 0; i < objects.length; i++) {
+		var object = objects[i];
+		if (object.onKeys) {
+			object.onKeys(keys);
+		}
 	}
 
-	ship.move();
+	for (var i = 0; i < objects.length; i++) {
+		var object = objects[i];
+		if (object.move) {
+			object.move();
+		}
+	}
 
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	debug.draw(ctx);
-	ship.draw(ctx);
+
+	for (var i = 0; i < objects.length; i++) {
+		var object = objects[i];
+		if (object.draw) {
+			object.draw(ctx);
+		}
+	}
+
 }
+
+var canvas = document.getElementById("astors");
+canvas.width  = window.innerWidth;
+canvas.height = window.innerHeight;
+
+var keys = new Keys();
+
+var objects = [
+	new Debug(),
+	new Ship()
+];
+for (i = 0; i < 10; i++) {
+	objects.push(new Asteroid());
+}
+
 init();
 setInterval(run, 10);
 
