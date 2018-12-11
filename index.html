@@ -38,12 +38,7 @@ function Vector(magnitude, direction) {
 		var ry = sy + other.y;
 
 		var magnitude = Math.sqrt( (rx * rx) + (ry * ry) );
-		var direction = 0;
-		if (magnitude == 0 || ry == 0) {
-			direction = this.direction;
-		} else {
-			direction = Math.atan2( ry, rx ) * RAD_TO_DEG;
-		}
+		var direction = Math.atan2( ry, rx ) * RAD_TO_DEG;
 
 		return new Vector(magnitude, direction);
 	};
