@@ -31,12 +31,14 @@ function Keys() {
 	this.keys_pressed = new Set();
 	this.init = function() {
 		document.addEventListener('keydown', (event) => {
-//			console.log(event.type + ' ' + event.key);
+			console.log(event.type + ' ' + event.key);
 			this.keys_pressed.add(event.key);
+			call(objects, o => o.keydown, o => o.keydown({ key: event.key }));
 		});
 		document.addEventListener('keyup', (event) => {
 //			console.log(event.type + ' ' + event.key);
 			this.keys_pressed.delete(event.key);
+			call(objects, o => o.keyup, o => o.keyup({ key: event.key }));
 		});
 	};
 	this.pressed = function(key) {
@@ -224,7 +226,15 @@ function Ship() {
 		if (keys.pressed('ArrowUp')) {
 			this.thrust(this.rotation, 0.1);
 		}
+		if (keys.pressed(' ')) {
+			this.fire();
+        }
 	}
+    this.keydown = function(event) {
+//		if (keys.pressed(' ')) {
+//			this.fire();
+//        }
+    }
 	this.thrust = function(direction, amount) {
 		var thrustVector = new Vector(amount, direction);
 		var shipVector = new Vector(this.speed, this.direction);
@@ -234,6 +244,9 @@ function Ship() {
 		this.speed = newShipVector.magnitude;
 		this.direction = newShipVector.direction;
 	}
+    this.fire = function() {
+        objects.add(new Projectile(this.x, this.y, this.rotation, this.speed + 5));
+    }
 	// this.interact = function(objects) {
 	// 	for (var i = objects.length - 1; i >= 0; i--) {
 	// 		var other = objects[i];
@@ -243,6 +256,69 @@ function Ship() {
 	// 	}
 	// }
 }
+function Projectile(x, y, direction, speed) {
+	this.x = x;
+	this.y = y;
+	this.rotation = direction;
+	this.direction = direction;
+	this.speed = speed;
+    this.life = 100;
+
+	this.debug = function(ctx) {
+		ctx.save();
+		ctx.translate( this.x, this.y );
+		ctx.fillText(
+				   'x = ' + this.x.toFixed(1)
+				+ ' y = ' + this.y.toFixed(1)
+				+ ' speed = ' + this.speed.toFixed(2)
+				+ ' direction = ' + this.direction.toFixed(2), -50, 50);
+		ctx.restore();
+	}
+	this.draw = function(ctx) {
+		var x = this.x,
+		    y = this.y,
+		    rotation = this.rotation;
+
+		ctx.save();
+
+		ctx.translate( x, y );
+		ctx.rotate( DEG_TO_RAD * rotation );
+
+		ctx.beginPath();
+		ctx.moveTo(25, 0);
+		ctx.lineTo(30, 0);
+		ctx.stroke();
+
+		ctx.restore();
+	}
+	this.move = function() {
+		var x = this.x,
+		    y = this.y,
+		    direction = this.direction,
+		    speed = this.speed;
+
+		this.x = x + ( speed * Math.cos( DEG_TO_RAD * direction ) );
+		this.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
+
+		if (this.x > canvas.width) {
+			this.x = 0;
+		}
+		if (this.x < 0) {
+			this.x = canvas.width;
+		}
+		if (this.y > canvas.height) {
+			this.y = 0;
+		}
+		if (this.y < 0) {
+			this.y = canvas.height;
+		}
+//        this.life--;
+        if (this.life < 0) {
+            objects.delete(this);
+        }
+	}
+}
+
 function init() {
 	keys.init();
 }
@@ -258,8 +334,7 @@ function run() {
 	call(objects, o => o.draw, o => o.draw(ctx));
 }
 function call(objects, pred, callback) {
-	for (var i = 0; i < objects.length; i++) {
-		var object = objects[i];
+	for (let object of objects) {
 		if (pred(object)) {
 			callback(object);
 		}
@@ -272,12 +347,11 @@ canvas.height = window.innerHeight;
 
 var keys = new Keys();
 
-var objects = [
-	new Debug(),
-	new Ship()
-];
+var objects = new Set();
+objects.add(new Debug());
+objects.add(new Ship());
 for (i = 0; i < 10; i++) {
-	objects.push(new Asteroid());
+	objects.add(new Asteroid());
 }
 
 init();
