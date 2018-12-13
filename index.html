@@ -47,8 +47,8 @@ function Keys() {
 }
 function Debug()  {
 	this.on = false;
-	this.onKeys = function (keys) {
-		if (keys.pressed('d')) {
+	this.keydown = function (event) {
+		if (event.key == 'd') {
 			this.on = ! this.on;
 		}
 	}
