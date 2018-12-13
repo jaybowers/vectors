@@ -80,37 +80,81 @@ function Vector(magnitude, direction) {
 		return new Vector(magnitude, direction);
 	};
 }
-function Asteroid() {
-	this.x = getRandomIntInclusive( 0, canvas.width );
-	this.y = getRandomIntInclusive( 0, canvas.height );
-	// the rotated angle of the ship
-	this.rotation = getRandomIntInclusive( 0, 360 );
-	// the direction that the ship is traveling in
-	this.direction = getRandomIntInclusive( 0, 360 );
+function Coords(x, y, rotation, direction, speed) {
+	// the x position on the canvas
+	this.x = x;
+	// the y position on the canvas
+	this.y = y;
+	// the rotated angle of the object
+	this.rotation = rotation;
+	// the direction that the object is traveling in
+	this.direction = direction;
 	// the speed of the movement
-	this.speed = Math.random();
-
-	this.debug = function(ctx) {
-		ctx.save();
-		ctx.translate( this.x, this.y );
-		ctx.fillText(
-				   'x = ' + this.x.toFixed(1)
-				+ ' y = ' + this.y.toFixed(1)
-				+ ' rotation = ' + this.rotation.toFixed(2)
-				+ ' speed = ' + this.speed.toFixed(2)
-				+ ' direction = ' + this.direction.toFixed(2), -50, 50);
-		ctx.restore();
+	this.speed = speed;
+}
+function VectorObject(coords) {
+	this.coords = coords;
+}
+VectorObject.prototype.debug = function( ctx ) {
+	var coords = this.coords;
+	ctx.save();
+	ctx.translate( coords.x, coords.y );
+	ctx.fillText(
+			   'x = ' + coords.x.toFixed(1)
+			+ ' y = ' + coords.y.toFixed(1)
+			+ ' rotation = ' + coords.rotation.toFixed(2)
+			+ ' speed = ' + coords.speed.toFixed(2)
+			+ ' direction = ' + coords.direction.toFixed(2), -50, 50);
+	ctx.restore();
+}
+VectorObject.prototype.drawObject = function( ctx ) {
+	// do nothing
+}
+VectorObject.prototype.draw = function( ctx ) {
+	var coords = this.coords;
+	var x = coords.x,
+	    y = coords.y,
+	    rotation = coords.rotation;
+	ctx.save();
+	ctx.translate( x, y );
+	ctx.rotate( DEG_TO_RAD * rotation );
+	this.drawObject( ctx );
+	ctx.restore();
+}
+VectorObject.prototype.moveObject = function() {
+	// do nothing
+}
+VectorObject.prototype.move = function() {
+	var coords = this.coords;
+	var x = coords.x,
+	    y = coords.y,
+	    direction = coords.direction,
+	    speed = coords.speed;
+	coords.x = x + ( speed * Math.cos( DEG_TO_RAD * direction ) );
+	coords.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
+	if (coords.x > canvas.width) {
+		coords.x = 0;
 	}
-	this.draw = function(ctx) {
-		var x = this.x,
-		    y = this.y,
-		    rotation = this.rotation;
-
-		ctx.save();
-
-		ctx.translate( x, y );
-		ctx.rotate( DEG_TO_RAD * rotation );
-
+	if (coords.x < 0) {
+		coords.x = canvas.width;
+	}
+	if (coords.y > canvas.height) {
+		coords.y = 0;
+	}
+	if (coords.y < 0) {
+		coords.y = canvas.height;
+	}
+	this.moveObject();
+}
+function Asteroid() {
+	VectorObject.call(this, new Coords(
+		getRandomIntInclusive( 0, canvas.width ),
+		getRandomIntInclusive( 0, canvas.height ),
+		getRandomIntInclusive( 0, 360 ),
+		getRandomIntInclusive( 0, 360 ),
+		Math.random()
+	));
+	this.drawObject = function( ctx ) {
 		ctx.beginPath();
 		ctx.moveTo(25, 25);
 		ctx.lineTo(-25, 25);
@@ -118,53 +162,12 @@ function Asteroid() {
 		ctx.lineTo(25, -25);
 		ctx.closePath();
 		ctx.stroke();
-
-		ctx.restore();
 	}
-	this.move = function() {
-		var x = this.x,
-		    y = this.y,
-		    direction = this.direction,
-		    speed = this.speed;
-
-		this.x = x + ( speed * Math.cos( DEG_TO_RAD * direction ) );
-		this.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
-
-		if (this.x > canvas.width) {
-			this.x = 0;
-		}
-		if (this.x < 0) {
-			this.x = canvas.width;
-		}
-		if (this.y > canvas.height) {
-			this.y = 0;
-		}
-		if (this.y < 0) {
-			this.y = canvas.height;
-		}
+	this.moveObject = function() {
 		this.rotation--;
-	},
-	this.thrust = function(direction, amount) {
-		var thrustVector = new Vector(amount, direction);
-		var shipVector = new Vector(this.speed, this.direction);
-
-		var newShipVector = shipVector.add(thrustVector);
-
-		this.speed = newShipVector.magnitude;
-		this.direction = newShipVector.direction;
 	}
-}
-function Ship() {
-	this.x = Math.abs( canvas.width / 2);
-	this.y = Math.abs( canvas.height / 2);
-	// the rotated angle of the ship
-	this.rotation = 180;
-	// the direction that the ship is traveling in
-	this.direction = 180;
-	// the speed of the movement
-	this.speed = 0;
 
-	this.debug = function(ctx) {
+	this.debug = function( ctx ) {
 		ctx.save();
 		ctx.translate( this.x, this.y );
 		ctx.fillText(
@@ -175,15 +178,19 @@ function Ship() {
 				+ ' direction = ' + this.direction.toFixed(2), -50, 50);
 		ctx.restore();
 	}
-	this.draw = function(ctx) {
-		var x = this.x,
-		    y = this.y,
-		    rotation = this.rotation;
-		
-		ctx.save();
-		ctx.translate( x, y );
-		ctx.rotate( DEG_TO_RAD * rotation );
+}
+Asteroid.prototype = Object.create(VectorObject.prototype);
+Asteroid.prototype.constructor = Asteroid;
 
+function Ship() {
+	VectorObject.call(this, new Coords(
+		Math.abs( canvas.width / 2),
+		Math.abs( canvas.height / 2),
+		270,
+		270,
+		0
+	));
+	this.drawObject = function(ctx) {
 		ctx.beginPath();
 		ctx.moveTo(25, 0);
 		ctx.lineTo(-25, -20);
@@ -191,147 +198,65 @@ function Ship() {
 		ctx.lineTo(-25, 20);
 		ctx.closePath();
     	ctx.stroke();
-
-		ctx.restore();
-	}
-	this.move = function() {
-		var x = this.x,
-		    y = this.y,
-		    direction = this.direction,
-		    speed = this.speed;
-
-		this.x = x + ( speed * Math.cos( DEG_TO_RAD * direction ) );
-		this.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
-
-		if (this.x > canvas.width) {
-			this.x = 0;
-		}
-		if (this.x < 0) {
-			this.x = canvas.width;
-		}
-		if (this.y > canvas.height) {
-			this.y = 0;
-		}
-		if (this.y < 0) {
-			this.y = canvas.height;
-		}
 	}
 	this.onKeys = function(keys) {
+		var coords = this.coords;
 		if (keys.pressed('ArrowRight')) {
-			this.rotation += 3;
+			coords.rotation += 3;
 		}
 		if (keys.pressed('ArrowLeft')) {
-			this.rotation -= 3;
+			coords.rotation -= 3;
 		}
 		if (keys.pressed('ArrowUp')) {
-			this.thrust(this.rotation, 0.1);
+			this.thrust(coords.rotation, 0.1);
 		}
 		if (keys.pressed(' ')) {
 			this.fire();
         }
 	}
-    this.keydown = function(event) {
-//		if (keys.pressed(' ')) {
-//			this.fire();
-//        }
-    }
 	this.thrust = function(direction, amount) {
 		var thrustVector = new Vector(amount, direction);
-		var shipVector = new Vector(this.speed, this.direction);
+		var shipVector = new Vector(this.coords.speed, this.coords.direction);
 
 		var newShipVector = shipVector.add(thrustVector);
 
-		this.speed = newShipVector.magnitude;
-		this.direction = newShipVector.direction;
+		this.coords.speed = newShipVector.magnitude;
+		this.coords.direction = newShipVector.direction;
 	}
     this.fire = function() {
-        objects.add(new Projectile(this.x, this.y, this.rotation, this.speed + 5));
+        objects.add(new Projectile(this.coords.x, this.coords.y, this.coords.rotation, this.coords.speed + 5));
     }
-	// this.interact = function(objects) {
-	// 	for (var i = objects.length - 1; i >= 0; i--) {
-	// 		var other = objects[i];
-	// 		if (touches(this, other)) {
-	// 			this.explode();
-	// 		}
-	// 	}
-	// }
 }
+Ship.prototype = Object.create(VectorObject.prototype);
+Ship.prototype.constructor = Ship;
 function Projectile(x, y, direction, speed) {
-	this.x = x;
-	this.y = y;
-	this.rotation = direction;
-	this.direction = direction;
-	this.speed = speed;
+	VectorObject.call(this, new Coords(
+		x,
+		y,
+		direction,
+		direction,
+		speed
+	));
     this.life = 100;
-
-	this.debug = function(ctx) {
-		ctx.save();
-		ctx.translate( this.x, this.y );
-		ctx.fillText(
-				   'x = ' + this.x.toFixed(1)
-				+ ' y = ' + this.y.toFixed(1)
-				+ ' speed = ' + this.speed.toFixed(2)
-				+ ' direction = ' + this.direction.toFixed(2), -50, 50);
-		ctx.restore();
-	}
-	this.draw = function(ctx) {
-		var x = this.x,
-		    y = this.y,
-		    rotation = this.rotation;
-
-		ctx.save();
-
-		ctx.translate( x, y );
-		ctx.rotate( DEG_TO_RAD * rotation );
-
+	this.drawObject = function(ctx) {
 		ctx.beginPath();
 		ctx.moveTo(25, 0);
 		ctx.lineTo(30, 0);
 		ctx.stroke();
-
-		ctx.restore();
-	}
-	this.move = function() {
-		var x = this.x,
-		    y = this.y,
-		    direction = this.direction,
-		    speed = this.speed;
-
-		this.x = x + ( speed * Math.cos( DEG_TO_RAD * direction ) );
-		this.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
-
-		if (this.x > canvas.width) {
-			this.x = 0;
-		}
-		if (this.x < 0) {
-			this.x = canvas.width;
-		}
-		if (this.y > canvas.height) {
-			this.y = 0;
-		}
-		if (this.y < 0) {
-			this.y = canvas.height;
-		}
-//        this.life--;
-        if (this.life < 0) {
-            objects.delete(this);
-        }
 	}
 }
+Projectile.prototype = Object.create(VectorObject.prototype);
+Projectile.prototype.constructor = Projectile;
 
 function init() {
 	keys.init();
 }
 function run() {
 	var ctx = canvas.getContext("2d");
-	call(objects, o => o.onKeys, o => o.onKeys(keys));
-	call(objects, o => o.move, o => o.move());
-	call(objects, o => o.interact, o => {
-		var others = objects.filter(p => p === o);
-		o.interact(others);
-	});
+	call(objects, o => 'onKeys' in o, o => o.onKeys(keys));
+	call(objects, o => 'move' in o, o => o.move());
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	call(objects, o => o.draw, o => o.draw(ctx));
+	call(objects, o => 'draw' in o, o => o.draw(ctx));
 }
 function call(objects, pred, callback) {
 	for (let object of objects) {
