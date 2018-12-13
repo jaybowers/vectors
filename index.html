@@ -31,14 +31,14 @@ function Keys() {
 	this.keys_pressed = new Set();
 	this.init = function() {
 		document.addEventListener('keydown', (event) => {
-			console.log(event.type + ' ' + event.key);
+//			console.log(event.type + ' ' + event.key);
 			this.keys_pressed.add(event.key);
-			call(objects, o => o.keydown, o => o.keydown({ key: event.key }));
+			call(objects, o => 'keydown' in o, o => o.keydown({ key: event.key }));
 		});
 		document.addEventListener('keyup', (event) => {
 //			console.log(event.type + ' ' + event.key);
 			this.keys_pressed.delete(event.key);
-			call(objects, o => o.keyup, o => o.keyup({ key: event.key }));
+			call(objects, o => 'keyup' in o, o => o.keyup({ key: event.key }));
 		});
 	};
 	this.pressed = function(key) {
@@ -58,7 +58,7 @@ function Debug()  {
 			   	  'canvas.height = ' + canvas.height
 				+ ' canvas.width = ' + canvas.width,
 			12, 12);
-			call(objects, o => o.debug, o => o.debug(ctx));
+			call(objects, o => 'debug' in o, o => o.debug(ctx));
 		}
 	} 
 }
@@ -165,18 +165,6 @@ function Asteroid() {
 	}
 	this.moveObject = function() {
 		this.rotation--;
-	}
-
-	this.debug = function( ctx ) {
-		ctx.save();
-		ctx.translate( this.x, this.y );
-		ctx.fillText(
-				   'x = ' + this.x.toFixed(1)
-				+ ' y = ' + this.y.toFixed(1)
-				+ ' rotation = ' + this.rotation.toFixed(2)
-				+ ' speed = ' + this.speed.toFixed(2)
-				+ ' direction = ' + this.direction.toFixed(2), -50, 50);
-		ctx.restore();
 	}
 }
 Asteroid.prototype = Object.create(VectorObject.prototype);
