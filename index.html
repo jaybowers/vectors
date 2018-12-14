@@ -149,6 +149,10 @@ VectorObject.prototype.move = function() {
 	if (coords.y < 0) {
 		coords.y = canvas.height;
 	}
+	// if (collision()) {
+	// 	// handle collision!!
+		
+	// }
 	this.moveObject();
 }
 function Asteroid() {
@@ -246,9 +250,30 @@ function init() {
 	keys.init();
 }
 function run() {
-	var ctx = canvas.getContext("2d");
 	call(objects, o => 'onKeys' in o, o => o.onKeys(keys));
 	call(objects, o => 'move' in o, o => o.move());
+	collisions(objects);
+}
+function collisions(objects) {
+	var collisions = [];
+	for (let object of objects) {
+		if ('vertices' in object) {
+			var vertices = object.vertices();
+			for (let other of objects) {
+				if (other === object) {
+					continue;
+				}
+				if ('vertices' in other) {
+					var otherVertices = object.vertices();
+
+					
+				}
+			}
+		}
+	}
+}
+function draw() {
+	var ctx = canvas.getContext("2d");
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
 	call(objects, o => 'draw' in o, o => o.draw(ctx));
 }
@@ -275,6 +300,7 @@ for (i = 0; i < 10; i++) {
 
 init();
 setInterval(run, 10);
+setInterval(draw, 10);
 
 </script>
 
