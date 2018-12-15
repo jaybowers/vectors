@@ -67,6 +67,16 @@ function Debug()  {
 		}
 	} 
 }
+/*
+ A vertex - each angular point of a polygon, polyhedron, or other figure on a 2d plane.
+*/
+function Vertex(x, y) {
+	this.x = x;
+	this.y = y;
+}
+/*
+ Having direction as well as magnitude, especially as determining the position of one point in space relative to another
+*/
 function Vector(magnitude, direction) {
 	this.magnitude =  magnitude;
 	this.direction = direction;
@@ -97,8 +107,9 @@ function Coords(x, y, rotation, direction, speed) {
 	// the speed of the movement
 	this.speed = speed;
 }
-function VectorObject(coords) {
+function VectorObject(coords, vertices) {
 	this.coords = coords;
+	this.vertices = vertices;
 }
 VectorObject.prototype.debug = function( ctx ) {
 	var coords = this.coords;
@@ -113,7 +124,14 @@ VectorObject.prototype.debug = function( ctx ) {
 	ctx.restore();
 }
 VectorObject.prototype.drawObject = function( ctx ) {
-	// do nothing
+		var vertices = this.vertices;
+		ctx.beginPath();
+		ctx.moveTo(vertices[0].x, vertices[0].y);
+		for (var i = 1; i < vertices.length; i++) {
+			ctx.lineTo(vertices[i].x, vertices[i].y);
+		}
+		ctx.closePath();
+		ctx.stroke();
 }
 VectorObject.prototype.draw = function( ctx ) {
 	var coords = this.coords;
@@ -149,10 +167,6 @@ VectorObject.prototype.move = function() {
 	if (coords.y < 0) {
 		coords.y = canvas.height;
 	}
-	// if (collision()) {
-	// 	// handle collision!!
-		
-	// }
 	this.moveObject();
 }
 function Asteroid() {
@@ -162,19 +176,18 @@ function Asteroid() {
 		getRandomIntInclusive( 0, 360 ),
 		getRandomIntInclusive( 0, 360 ),
 		Math.random()
-	));
+	), [
+		new Vertex(25, 25),
+		new Vertex(-25, 25),
+		new Vertex(-25, -25),
+		new Vertex(25, -25)
+	]);
 	this.rotation_speed = getRandomFloatInclusive( -1, 1 );
-	this.drawObject = function( ctx ) {
-		ctx.beginPath();
-		ctx.moveTo(25, 25);
-		ctx.lineTo(-25, 25);
-		ctx.lineTo(-25, -25);
-		ctx.lineTo(25, -25);
-		ctx.closePath();
-		ctx.stroke();
-	}
 	this.moveObject = function() {
 		this.coords.rotation -= this.rotation_speed;
+	}
+	this.boundingPoly = function() {
+
 	}
 }
 Asteroid.prototype = Object.create(VectorObject.prototype);
@@ -187,16 +200,12 @@ function Ship() {
 		270,
 		270,
 		0
-	));
-	this.drawObject = function(ctx) {
-		ctx.beginPath();
-		ctx.moveTo(25, 0);
-		ctx.lineTo(-25, -20);
-		ctx.lineTo(-5, 0);
-		ctx.lineTo(-25, 20);
-		ctx.closePath();
-    	ctx.stroke();
-	}
+	), [
+		new Vertex(25, 0),
+		new Vertex(-25, -20),
+		new Vertex(-5, 0),
+		new Vertex(-25, 20)
+	]);
 	this.onKeys = function(keys) {
 		var coords = this.coords;
 		if (keys.pressed('ArrowRight')) {
@@ -234,14 +243,10 @@ function Projectile(x, y, direction, speed) {
 		direction,
 		direction,
 		speed
-	));
-    this.life = 100;
-	this.drawObject = function(ctx) {
-		ctx.beginPath();
-		ctx.moveTo(25, 0);
-		ctx.lineTo(30, 0);
-		ctx.stroke();
-	}
+	), [
+		new Vertex(25, 0),
+		new Vertex(30, 0)
+	]);
 }
 Projectile.prototype = Object.create(VectorObject.prototype);
 Projectile.prototype.constructor = Projectile;
@@ -257,19 +262,19 @@ function run() {
 function collisions(objects) {
 	var collisions = [];
 	for (let object of objects) {
-		if ('vertices' in object) {
-			var vertices = object.vertices();
-			for (let other of objects) {
-				if (other === object) {
-					continue;
-				}
-				if ('vertices' in other) {
-					var otherVertices = object.vertices();
+		// if ('vertices' in object) {
+		// 	var vertices = object.vertices();
+		// 	for (let other of objects) {
+		// 		if (other === object) {
+		// 			continue;
+		// 		}
+		// 		if ('vertices' in other) {
+		// 			var otherVertices = object.vertices();
 
 					
-				}
-			}
-		}
+		// 		}
+		// 	}
+		// }
 	}
 }
 function draw() {
