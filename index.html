@@ -27,6 +27,11 @@ function getRandomIntInclusive(min, max) {
   var max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
+function getRandomFloatInclusive(min, max) {
+  var min = Math.ceil(min);
+  var max = Math.floor(max);
+  return Math.random() * (max - min + 1) + min;
+}
 function Keys() {
 	this.keys_pressed = new Set();
 	this.init = function() {
@@ -154,6 +159,7 @@ function Asteroid() {
 		getRandomIntInclusive( 0, 360 ),
 		Math.random()
 	));
+	this.rotation_speed = getRandomFloatInclusive( -1, 1 );
 	this.drawObject = function( ctx ) {
 		ctx.beginPath();
 		ctx.moveTo(25, 25);
@@ -164,7 +170,7 @@ function Asteroid() {
 		ctx.stroke();
 	}
 	this.moveObject = function() {
-		this.rotation--;
+		this.coords.rotation -= this.rotation_speed;
 	}
 }
 Asteroid.prototype = Object.create(VectorObject.prototype);
