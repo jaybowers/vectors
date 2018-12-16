@@ -123,14 +123,14 @@ VectorObject.prototype.debug = function( ctx ) {
 			+ ' direction = ' + coords.direction.toFixed(2), -50, 50);
 	ctx.restore();
 }
-VectorObject.prototype.drawObject = function( ctx ) {
-		var vertices = this.vertices;
+VectorObject.prototype.drawObject = function( ctx, vertices, strokeStyle = 'black' ) {
 		ctx.beginPath();
 		ctx.moveTo(vertices[0].x, vertices[0].y);
-		for (var i = 1; i < vertices.length; i++) {
+		for (let i = 1; i < vertices.length; i++) {
 			ctx.lineTo(vertices[i].x, vertices[i].y);
 		}
 		ctx.closePath();
+		ctx.strokeStyle = strokeStyle;
 		ctx.stroke();
 }
 VectorObject.prototype.draw = function( ctx ) {
@@ -141,7 +141,10 @@ VectorObject.prototype.draw = function( ctx ) {
 	ctx.save();
 	ctx.translate( x, y );
 	ctx.rotate( DEG_TO_RAD * rotation );
-	this.drawObject( ctx );
+	this.drawObject( ctx, this.vertices );
+	if (debug.on) {
+		this.drawObject( ctx, this.boundingBox(), 'red' );
+	}
 	ctx.restore();
 }
 VectorObject.prototype.moveObject = function() {
@@ -169,26 +172,64 @@ VectorObject.prototype.move = function() {
 	}
 	this.moveObject();
 }
+VectorObject.prototype.boundingBox = function() {
+	var minx = 0, maxx = 0, miny = 0, maxy = 0;
+	for (let vertex of this.vertices) {
+		minx = Math.min(minx, vertex.x);
+		maxx = Math.max(maxx, vertex.x);
+		miny = Math.min(miny, vertex.y);
+		maxy = Math.max(maxy, vertex.y);
+	}
+	return [
+		new Vertex(minx, miny),
+		new Vertex(minx, maxy),
+		new Vertex(maxx, maxy),
+		new Vertex(maxx, miny)
+	];
+}
+
 function Asteroid() {
+
+	var raduis = 50;
+	var vertices = [];
+	for (let angle = 0; angle < 360; angle += getRandomIntInclusive(30, 90)) {
+
+		var x = (raduis + getRandomIntInclusive(-10, +10)) * Math.cos( angle * DEG_TO_RAD );
+		var y = (raduis + getRandomIntInclusive(-10, +10)) * Math.sin( angle * DEG_TO_RAD );
+		vertices.push( new Vertex(x, y) );
+	}
+
 	VectorObject.call(this, new Coords(
 		getRandomIntInclusive( 0, canvas.width ),
 		getRandomIntInclusive( 0, canvas.height ),
 		getRandomIntInclusive( 0, 360 ),
 		getRandomIntInclusive( 0, 360 ),
 		Math.random()
-	), [
-		new Vertex(25, 25),
-		new Vertex(-25, 25),
-		new Vertex(-25, -25),
-		new Vertex(25, -25)
-	]);
+	), vertices);
 	this.rotation_speed = getRandomFloatInclusive( -1, 1 );
 	this.moveObject = function() {
 		this.coords.rotation -= this.rotation_speed;
 	}
-	this.boundingPoly = function() {
+	// this.translatedVertecies = function() {
+	// 	var x = this.coords.x,
+	//     	y = this.coords.y,
+	//     	rotation = this.coords.rotation;
 
-	}
+	//     var translated = [];
+	//     for (let vertex of this.vertices) {
+	// 		var rx = (vertex.x * Math.cos(rotation))
+	// 				- (vertex.y * Math.sin(rotation));
+
+	// 		var ry = (vertex.x * Math.sin(rotation))
+	// 				+ (vertex.y * Math.cos(rotation));
+
+	// 		var tx = rx + x;
+	// 		var ty = ry + y;
+
+	// 		translated.push(new Vertex(tx, ty));
+	//     }
+	//     return translated;
+	// }
 }
 Asteroid.prototype = Object.create(VectorObject.prototype);
 Asteroid.prototype.constructor = Asteroid;
@@ -262,19 +303,25 @@ function run() {
 function collisions(objects) {
 	var collisions = [];
 	for (let object of objects) {
-		// if ('vertices' in object) {
-		// 	var vertices = object.vertices();
-		// 	for (let other of objects) {
-		// 		if (other === object) {
-		// 			continue;
-		// 		}
-		// 		if ('vertices' in other) {
-		// 			var otherVertices = object.vertices();
+		if ('boundingBox' in object) {
+			var box = object.boundingBox();
+			for (let other of objects) {
+				if (other === object) {
+					continue;
+				}
+				if ('boundingBox' in other) {
+					var otherBox = object.boundingBox();
+					if (boxCollide(box, otherBox)) {
 
-					
-		// 		}
-		// 	}
-		// }
+					}
+				}
+			}
+		}
+	}
+}
+function boxCollide(box1, box2) {
+	if (box1[0]) {
+
 	}
 }
 function draw() {
@@ -297,7 +344,8 @@ canvas.height = window.innerHeight;
 var keys = new Keys();
 
 var objects = new Set();
-objects.add(new Debug());
+var debug = new Debug();
+objects.add(debug);
 objects.add(new Ship());
 for (i = 0; i < 10; i++) {
 	objects.add(new Asteroid());
