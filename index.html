@@ -107,10 +107,11 @@ function Coords(x, y, rotation, direction, speed) {
 	// the speed of the movement
 	this.speed = speed;
 }
-function VectorObject(coords, vertices) {
+function VectorObject(coords, vertices, mass) {
 	this.coords = coords;
 	this.vertices = vertices;
-	this.colliding = false;
+	this.mass = mass;
+	this.colliding = null;
 }
 VectorObject.prototype.debug = function( ctx ) {
 	var coords = this.coords;
@@ -238,10 +239,31 @@ function Asteroid() {
 		getRandomIntInclusive( 0, 360 ),
 		getRandomIntInclusive( 0, 360 ),
 		Math.random()
-	), vertices);
+	), vertices, 500);
 	this.rotation_speed = getRandomFloatInclusive( -1, 1 );
 	this.moveObject = function() {
 		this.coords.rotation -= this.rotation_speed;
+	}
+	this.onCollision = function(other) {
+		this.coords.speed = this.elasticCollision(this, other);
+		this.coords.direction = this.coords.direction - 180;
+	}
+	this.elasticCollision = function(m1, m2) {
+		var first = 0;
+		if (m1.mass != m2.mass ) {
+			first = ( ( m1.mass - m2.mass) / ( m1.mass + m2.mass ) * m1.coords.speed );
+		}
+		return first
+			+ ( ( 2 * m2.mass) / ( m1.mass + m2.mass ) * m2.coords.speed )
+	}
+	this.thrust = function(direction, amount) {
+		var thrustVector = new Vector(amount, direction);
+		var origVector = new Vector(this.coords.speed, this.coords.direction);
+
+		var newVector = origVector.add(thrustVector);
+
+		this.coords.speed = newVector.magnitude;
+		this.coords.direction = newVector.direction;
 	}
 }
 Asteroid.prototype = Object.create(VectorObject.prototype);
@@ -259,7 +281,7 @@ function Ship() {
 		new Vertex(-25, -20),
 		new Vertex(-5, 0),
 		new Vertex(-25, 20)
-	]);
+	], 100);
 	this.onKeys = function(keys) {
 		var coords = this.coords;
 		if (keys.pressed('ArrowRight')) {
@@ -300,7 +322,7 @@ function Projectile(x, y, direction, speed) {
 	), [
 		new Vertex(25, 0),
 		new Vertex(30, 0)
-	]);
+	], 1);
 }
 Projectile.prototype = Object.create(VectorObject.prototype);
 Projectile.prototype.constructor = Projectile;
@@ -319,7 +341,7 @@ function collisions(objects) {
 		if ('boundingBox' in object) {
 			var box = object.boundingBox();
 
-			var colliding = false;
+			var colliding = null;
 			for (let other of objects) {
 				if (other === object) {
 					continue;
@@ -327,12 +349,11 @@ function collisions(objects) {
 				if ('boundingBox' in other) {
 					var otherBox = other.boundingBox();
 					if (boxCollide(box, otherBox)) {
-						colliding = true;
+						call(objects, o => 'onCollision' in o, o => o.onCollision(other));
 						break;
 					}
 				}
 			}
-			object.colliding = colliding;
 		}
 	}
 }
