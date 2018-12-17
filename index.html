@@ -106,6 +106,15 @@ function Coords(x, y, rotation, direction, speed) {
 	this.direction = direction;
 	// the speed of the movement
 	this.speed = speed;
+	this.rotate = function(degrees) {
+		this.rotation += degrees;
+		if (this.rotation > 360) {
+			this.rotation -= 360;
+		}
+		if (this.rotation < 0) {
+			this.rotation += 360;
+		}
+	}
 }
 function VectorObject(coords, vertices, mass) {
 	this.coords = coords;
@@ -242,7 +251,7 @@ function Asteroid() {
 	), vertices, 500);
 	this.rotation_speed = getRandomFloatInclusive( -1, 1 );
 	this.moveObject = function() {
-		this.coords.rotation -= this.rotation_speed;
+		this.coords.rotate(this.rotation_speed);
 	}
 	this.onCollision = function(other) {
 		this.coords.speed = this.elasticCollision(this, other);
@@ -285,10 +294,10 @@ function Ship() {
 	this.onKeys = function(keys) {
 		var coords = this.coords;
 		if (keys.pressed('ArrowRight')) {
-			coords.rotation += 3;
+			coords.rotate(3);
 		}
 		if (keys.pressed('ArrowLeft')) {
-			coords.rotation -= 3;
+			coords.rotate(-3);
 		}
 		if (keys.pressed('ArrowUp')) {
 			this.thrust(coords.rotation, 0.1);
@@ -349,7 +358,7 @@ function collisions(objects) {
 				if ('boundingBox' in other) {
 					var otherBox = other.boundingBox();
 					if (boxCollide(box, otherBox)) {
-						call(objects, o => 'onCollision' in o, o => o.onCollision(other));
+						call([ object ], o => 'onCollision' in o, o => o.onCollision(other));
 						break;
 					}
 				}
