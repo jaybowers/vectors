@@ -110,6 +110,7 @@ function Coords(x, y, rotation, direction, speed) {
 function VectorObject(coords, vertices) {
 	this.coords = coords;
 	this.vertices = vertices;
+	this.colliding = false;
 }
 VectorObject.prototype.debug = function( ctx ) {
 	var coords = this.coords;
@@ -145,7 +146,7 @@ VectorObject.prototype.draw = function( ctx ) {
 	ctx.restore();
 	if (debug.on) {
 		ctx.save();
-		this.drawObject( ctx, this.boundingBox(), 'red' );
+		this.drawObject( ctx, this.boundingBox().asVerticies(), (this.colliding ? 'red' : 'blue') );
 		ctx.restore();
 	}
 }
@@ -204,12 +205,20 @@ VectorObject.prototype.boundingBox = function() {
 		miny = Math.min(miny, vertex.y);
 		maxy = Math.max(maxy, vertex.y);
 	}
-	return [
-		new Vertex(minx, miny),
-		new Vertex(minx, maxy),
-		new Vertex(maxx, maxy),
-		new Vertex(maxx, miny)
-	];
+	return {
+		bottomLeft: new Vertex(minx, miny),
+		topRight: new Vertex(minx, maxy),
+		topLeft: new Vertex(maxx, maxy),
+		bottomRight: new Vertex(maxx, miny),
+		asVerticies: function() {
+			return [
+				this.bottomLeft,
+				this.topRight,
+				this.topLeft,
+				this.bottomRight
+			];
+		}
+	};
 }
 
 function Asteroid() {
@@ -306,27 +315,32 @@ function run() {
 }
 function collisions(objects) {
 	var collisions = [];
-	// for (let object of objects) {
-	// 	if ('boundingBox' in object) {
-	// 		var box = object.boundingBox();
-	// 		for (let other of objects) {
-	// 			if (other === object) {
-	// 				continue;
-	// 			}
-	// 			if ('boundingBox' in other) {
-	// 				var otherBox = object.boundingBox();
-	// 				if (boxCollide(box, otherBox)) {
+	for (let object of objects) {
+		if ('boundingBox' in object) {
+			var box = object.boundingBox();
 
-	// 				}
-	// 			}
-	// 		}
-	// 	}
-	// }
+			var colliding = false;
+			for (let other of objects) {
+				if (other === object) {
+					continue;
+				}
+				if ('boundingBox' in other) {
+					var otherBox = other.boundingBox();
+					if (boxCollide(box, otherBox)) {
+						colliding = true;
+						break;
+					}
+				}
+			}
+			object.colliding = colliding;
+		}
+	}
 }
 function boxCollide(box1, box2) {
-	if (box1[0]) {
-
-	}
+	return box1.bottomRight.x >= box2.bottomLeft.x
+		&& box1.bottomLeft.x <= box2.bottomRight.x
+		&& box1.topLeft.y >= box2.bottomLeft.y
+		&& box1.bottomLeft.y <= box2.topLeft.y;
 }
 function draw() {
 	var ctx = canvas.getContext("2d");
