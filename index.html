@@ -142,10 +142,12 @@ VectorObject.prototype.draw = function( ctx ) {
 	ctx.translate( x, y );
 	ctx.rotate( DEG_TO_RAD * rotation );
 	this.drawObject( ctx, this.vertices );
-	if (debug.on) {
-		this.drawObject( ctx, this.boundingBox(), 'red' );
-	}
 	ctx.restore();
+	if (debug.on) {
+		ctx.save();
+		this.drawObject( ctx, this.boundingBox(), 'red' );
+		ctx.restore();
+	}
 }
 VectorObject.prototype.moveObject = function() {
 	// do nothing
@@ -172,9 +174,31 @@ VectorObject.prototype.move = function() {
 	}
 	this.moveObject();
 }
+VectorObject.prototype.translatedVertecies = function() {
+	var x = this.coords.x,
+    	y = this.coords.y,
+    	rotation = this.coords.rotation;
+
+    var translated = [];
+    for (let vertex of this.vertices) {
+		var rx = (vertex.x * Math.cos(rotation * DEG_TO_RAD))
+				- (vertex.y * Math.sin(rotation * DEG_TO_RAD));
+
+		var ry = (vertex.x * Math.sin(rotation * DEG_TO_RAD))
+				+ (vertex.y * Math.cos(rotation * DEG_TO_RAD));
+
+		var tx = rx + x;
+		var ty = ry + y;
+
+		translated.push(new Vertex(tx, ty));
+    }
+    return translated;
+}
 VectorObject.prototype.boundingBox = function() {
-	var minx = 0, maxx = 0, miny = 0, maxy = 0;
-	for (let vertex of this.vertices) {
+	var vertices = this.translatedVertecies();
+	var minx = vertices[0].x, maxx = vertices[0].x, miny = vertices[0].y, maxy = vertices[0].y;
+	for (let i = 0; i < vertices.length; i++) {
+		let vertex = vertices[i];
 		minx = Math.min(minx, vertex.x);
 		maxx = Math.max(maxx, vertex.x);
 		miny = Math.min(miny, vertex.y);
@@ -210,26 +234,6 @@ function Asteroid() {
 	this.moveObject = function() {
 		this.coords.rotation -= this.rotation_speed;
 	}
-	// this.translatedVertecies = function() {
-	// 	var x = this.coords.x,
-	//     	y = this.coords.y,
-	//     	rotation = this.coords.rotation;
-
-	//     var translated = [];
-	//     for (let vertex of this.vertices) {
-	// 		var rx = (vertex.x * Math.cos(rotation))
-	// 				- (vertex.y * Math.sin(rotation));
-
-	// 		var ry = (vertex.x * Math.sin(rotation))
-	// 				+ (vertex.y * Math.cos(rotation));
-
-	// 		var tx = rx + x;
-	// 		var ty = ry + y;
-
-	// 		translated.push(new Vertex(tx, ty));
-	//     }
-	//     return translated;
-	// }
 }
 Asteroid.prototype = Object.create(VectorObject.prototype);
 Asteroid.prototype.constructor = Asteroid;
@@ -302,22 +306,22 @@ function run() {
 }
 function collisions(objects) {
 	var collisions = [];
-	for (let object of objects) {
-		if ('boundingBox' in object) {
-			var box = object.boundingBox();
-			for (let other of objects) {
-				if (other === object) {
-					continue;
-				}
-				if ('boundingBox' in other) {
-					var otherBox = object.boundingBox();
-					if (boxCollide(box, otherBox)) {
+	// for (let object of objects) {
+	// 	if ('boundingBox' in object) {
+	// 		var box = object.boundingBox();
+	// 		for (let other of objects) {
+	// 			if (other === object) {
+	// 				continue;
+	// 			}
+	// 			if ('boundingBox' in other) {
+	// 				var otherBox = object.boundingBox();
+	// 				if (boxCollide(box, otherBox)) {
 
-					}
-				}
-			}
-		}
-	}
+	// 				}
+	// 			}
+	// 		}
+	// 	}
+	// }
 }
 function boxCollide(box1, box2) {
 	if (box1[0]) {
