@@ -106,14 +106,20 @@ function Coords(x, y, rotation, direction, speed) {
 	this.direction = direction;
 	// the speed of the movement
 	this.speed = speed;
-	this.rotate = function(degrees) {
-		this.rotation += degrees;
-		if (this.rotation > 360) {
-			this.rotation -= 360;
+	this.rotate = function(deltaDegrees) {
+		this.rotation = this._boundedDegrees(this.rotation + deltaDegrees);
+	}
+	this.direct = function(newDegrees) {
+		this.direction = this._boundedDegrees(newDegrees);
+	}
+	this._boundedDegrees = function(degrees) {
+		if (degrees > 360) {
+			degrees -= 360;
 		}
-		if (this.rotation < 0) {
-			this.rotation += 360;
+		if (degrees < 0) {
+			degrees += 360;
 		}
+		return degrees;
 	}
 }
 function VectorObject(coords, vertices, mass) {
@@ -230,18 +236,14 @@ VectorObject.prototype.boundingBox = function() {
 		}
 	};
 }
-
 function Asteroid() {
-
 	var raduis = 50;
 	var vertices = [];
 	for (let angle = 0; angle < 360; angle += getRandomIntInclusive(30, 90)) {
-
 		var x = (raduis + getRandomIntInclusive(-10, +10)) * Math.cos( angle * DEG_TO_RAD );
 		var y = (raduis + getRandomIntInclusive(-10, +10)) * Math.sin( angle * DEG_TO_RAD );
 		vertices.push( new Vertex(x, y) );
 	}
-
 	VectorObject.call(this, new Coords(
 		getRandomIntInclusive( 0, canvas.width ),
 		getRandomIntInclusive( 0, canvas.height ),
@@ -272,7 +274,7 @@ function Asteroid() {
 		var newVector = origVector.add(thrustVector);
 
 		this.coords.speed = newVector.magnitude;
-		this.coords.direction = newVector.direction;
+		this.coords.direct(newVector.direction);
 	}
 }
 Asteroid.prototype = Object.create(VectorObject.prototype);
@@ -313,7 +315,7 @@ function Ship() {
 		var newShipVector = shipVector.add(thrustVector);
 
 		this.coords.speed = newShipVector.magnitude;
-		this.coords.direction = newShipVector.direction;
+		this.coords.direct(newShipVector.direction);
 	}
     this.fire = function() {
         objects.add(new Projectile(this.coords.x, this.coords.y, this.coords.rotation, this.coords.speed + 5));
