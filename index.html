@@ -96,6 +96,9 @@ function Vector(magnitude, direction) {
 		return new Vector(magnitude, direction);
 	};
 }
+/*
+ Describes where the object is on the 2D plane
+*/
 function Coords(x, y, rotation, direction, speed) {
 	// the x position on the canvas
 	this.x = x;
@@ -179,20 +182,11 @@ VectorObject.prototype.draw = function( ctx ) {
 	this.drawObject( ctx, this.vertices );
 	ctx.restore();
 	if (debug.on) {
-		this.bounds().draw(ctx, this);
+		this.bounds().draw(ctx);
 	}
 }
 VectorObject.prototype.moveObject = function() {
-	// do nothing
-}
-VectorObject.prototype.move = function() {
 	var coords = this.coords;
-	var x = coords.x,
-	    y = coords.y,
-	    direction = coords.direction,
-	    speed = coords.speed;
-	coords.x = x + ( speed * Math.cos( DEG_TO_RAD * direction ) );
-	coords.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
 	if (coords.x > canvas.width) {
 		coords.x = 0;
 	}
@@ -205,6 +199,15 @@ VectorObject.prototype.move = function() {
 	if (coords.y < 0) {
 		coords.y = canvas.height;
 	}
+}
+VectorObject.prototype.move = function() {
+	var coords = this.coords;
+	var x = coords.x,
+	    y = coords.y,
+	    direction = coords.direction,
+	    speed = coords.speed;
+	coords.x = x + ( speed * Math.cos( DEG_TO_RAD * direction ) );
+	coords.y = y + ( speed * Math.sin( DEG_TO_RAD * direction ) );
 	this.moveObject();
 }
 VectorObject.prototype.translatedVertecies = function() {
@@ -237,6 +240,7 @@ VectorObject.prototype.boundingBox = function() {
 		miny = Math.min(miny, vertex.y);
 		maxy = Math.max(maxy, vertex.y);
 	}
+	var object = this;
 	return {
 		type: 'box',
 		bottomLeft: new Vertex(minx, miny),
@@ -251,7 +255,7 @@ VectorObject.prototype.boundingBox = function() {
 				this.bottomRight
 			];
 		},
-		draw: function(ctx, object) {
+		draw: function(ctx) {
 			ctx.save();
 			object.drawObject( ctx, this.asVerticies(), (object.colliding ? 'red' : 'blue') );
 			ctx.restore();
@@ -259,42 +263,54 @@ VectorObject.prototype.boundingBox = function() {
 	};
 }
 VectorObject.prototype.boundingCircle = function() {
-	var vertices = this.translatedVertecies();
+	var vertices = this.vertices;
 	var minx = vertices[0].x, maxx = vertices[0].x, miny = vertices[0].y, maxy = vertices[0].y;
 	for (let i = 0; i < vertices.length; i++) {
 		let vertex = vertices[i];
 		maxx = Math.max(maxx, Math.abs(vertex.x));
 		maxy = Math.max(maxy, Math.abs(vertex.y));
 	}
+	var object = this;
 	return {
 		type: 'circle',
 		radius: Math.max(maxx, maxy),
-		draw: function(ctx, object) {
+		x: object.coords.x,
+		y: object.coords.y,
+		draw: function(ctx) {
 			ctx.save();
 			ctx.translate(object.coords.x, object.coords.y);
-			ctx.arc(0, 0, this.raduis, 0, 2 * Math.PI);
+			ctx.beginPath();
+			ctx.arc(0, 0, this.radius, 0, 2 * Math.PI, false);
 			ctx.strokeStyle = (object.colliding ? 'red' : 'blue');
 			ctx.stroke();
+			ctx.restore();
 		}
 	};
 }
-function Asteroid() {
-	var raduis = 50;
+function Asteroid(
+	x = getRandomIntInclusive( 0, canvas.width ),
+	y = getRandomIntInclusive( 0, canvas.height ),
+	rotation = getRandomIntInclusive( 0, 360 ),
+	direction = getRandomIntInclusive( 0, 360 ),
+	speed = Math.random()
+	) {
+	var radius = 50;
 	var vertices = [];
 	for (let angle = 0; angle < 360; angle += getRandomIntInclusive(30, 90)) {
-		var x = (raduis + getRandomIntInclusive(-10, +10)) * Math.cos( angle * DEG_TO_RAD );
-		var y = (raduis + getRandomIntInclusive(-10, +10)) * Math.sin( angle * DEG_TO_RAD );
+		let x = (radius + getRandomIntInclusive(-10, +10)) * Math.cos( angle * DEG_TO_RAD );
+		let y = (radius + getRandomIntInclusive(-10, +10)) * Math.sin( angle * DEG_TO_RAD );
 		vertices.push( new Vertex(x, y) );
 	}
 	VectorObject.call(this, new Coords(
-		getRandomIntInclusive( 0, canvas.width ),
-		getRandomIntInclusive( 0, canvas.height ),
-		getRandomIntInclusive( 0, 360 ),
-		getRandomIntInclusive( 0, 360 ),
-		Math.random()
+		x,
+		y,
+		rotation,
+		direction,
+		speed
 	), vertices, 500);
 	this.rotation_speed = getRandomFloatInclusive( -1, 1 );
 	this.moveObject = function() {
+		Object.getPrototypeOf(Asteroid.prototype).moveObject.call(this);
 		this.coords.rotate(this.rotation_speed);
 	}
 	this.onCollision = function(other) {
@@ -344,6 +360,9 @@ function Ship() {
 			this.fire();
         }
 	}
+	this.bounds = function() {
+		return this.boundingCircle();
+	}
 	this.thrust = function() {
     	var coords = this.coords;
 		coords.applyForce(coords.rotation, 0.1);
@@ -366,6 +385,12 @@ function Projectile(x, y, direction, speed) {
 		new Vertex(25, 0),
 		new Vertex(30, 0)
 	], 1);
+	this.moveObject = function() {
+		if (this.coords.x <= 0 || this.coords.x >= canvas.width
+		 || this.coords.y <= 0 || this.coords.y >= canvas.width) {
+			objects.delete(this);
+		}
+	}
 }
 Projectile.prototype = Object.create(VectorObject.prototype);
 Projectile.prototype.constructor = Projectile;
@@ -393,29 +418,43 @@ function collisions(objects) {
 	}
 }
 function collision(object) {
-	if ('boundingBox' in object) {
-		var box = object.boundingBox();
+	if ('bounds' in object) {
+		var bounds = object.bounds();
 
 		var colliding = null;
 		for (let other of objects) {
 			if (other === object) {
 				continue;
 			}
-			if ('boundingBox' in other) {
-				var otherBox = other.boundingBox();
-				if (boxCollide(box, otherBox)) {
-					return  other;
+			if ('bounds' in other) {
+				var otherbounds = other.bounds();
+				if (bounds.type == 'box' && otherbounds.type == 'box') {
+					if (boxBoxCollide(bounds, otherbounds)) {
+						return  other;
+					}
 				}
+				if (bounds.type == 'circle' && otherbounds.type == 'circle') {
+					if (circleCircleCollide(bounds, otherbounds)) {
+						return  other;
+					}
+				}
+
 			}
 		}
 	}
 	return null;
 }
-function boxCollide(box1, box2) {
+function boxBoxCollide(box1, box2) {
 	return box1.bottomRight.x >= box2.bottomLeft.x
 		&& box1.bottomLeft.x <= box2.bottomRight.x
 		&& box1.topLeft.y >= box2.bottomLeft.y
 		&& box1.bottomLeft.y <= box2.topLeft.y;
+}
+function circleCircleCollide(circle1, circle2) {
+	var length = Math.abs(circle1.x - circle2.x);
+	var height = Math.abs(circle1.y - circle2.y);
+	var distance = Math.sqrt( length * length + height * height );
+	return distance <= circle1.radius + circle2.radius;
 }
 function draw() {
 	var ctx = canvas.getContext("2d");
@@ -446,7 +485,9 @@ objects.add(new Ship());
 for (i = 0; i < 10; i++) {
 	objects.add(new Asteroid());
 }
-var keys = new Keys(new Set([ objects, [ debug ] ]));
+//objects.add(new Asteroid());
+
+var keys = new Keys(new Set([ ...objects, ...[ debug ] ]));
 
 init();
 setInterval(run, 10);
