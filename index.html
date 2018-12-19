@@ -32,18 +32,19 @@ function getRandomFloatInclusive(min, max) {
   var max = Math.floor(max);
   return Math.random() * (max - min + 1) + min;
 }
-function Keys() {
+function Keys(listeners) {
+	this.listeners = listeners;
 	this.keys_pressed = new Set();
 	this.init = function() {
 		document.addEventListener('keydown', (event) => {
 //			console.log(event.type + ' ' + event.key);
 			this.keys_pressed.add(event.key);
-			callObjects(objects, o => 'keydown' in o, o => o.keydown({ key: event.key }));
+			callObjects(this.listeners, o => 'keydown' in o, o => o.keydown({ key: event.key }));
 		});
 		document.addEventListener('keyup', (event) => {
 //			console.log(event.type + ' ' + event.key);
 			this.keys_pressed.delete(event.key);
-			callObjects(objects, o => 'keyup' in o, o => o.keyup({ key: event.key }));
+			callObjects(this.listeners, o => 'keyup' in o, o => o.keyup({ key: event.key }));
 		});
 	};
 	this.pressed = function(key) {
@@ -141,6 +142,9 @@ function VectorObject(coords, vertices, mass) {
 	this.vertices = vertices;
 	this.mass = mass;
 	this.colliding = null;
+	this.bounds = function() {
+		return this.boundingBox();
+	}
 }
 VectorObject.prototype.debug = function( ctx ) {
 	var coords = this.coords;
@@ -175,9 +179,7 @@ VectorObject.prototype.draw = function( ctx ) {
 	this.drawObject( ctx, this.vertices );
 	ctx.restore();
 	if (debug.on) {
-		ctx.save();
-		this.drawObject( ctx, this.boundingBox().asVerticies(), (this.colliding ? 'red' : 'blue') );
-		ctx.restore();
+		this.bounds().draw(ctx, this);
 	}
 }
 VectorObject.prototype.moveObject = function() {
@@ -236,6 +238,7 @@ VectorObject.prototype.boundingBox = function() {
 		maxy = Math.max(maxy, vertex.y);
 	}
 	return {
+		type: 'box',
 		bottomLeft: new Vertex(minx, miny),
 		topRight: new Vertex(minx, maxy),
 		topLeft: new Vertex(maxx, maxy),
@@ -247,6 +250,31 @@ VectorObject.prototype.boundingBox = function() {
 				this.topLeft,
 				this.bottomRight
 			];
+		},
+		draw: function(ctx, object) {
+			ctx.save();
+			object.drawObject( ctx, this.asVerticies(), (object.colliding ? 'red' : 'blue') );
+			ctx.restore();
+		}
+	};
+}
+VectorObject.prototype.boundingCircle = function() {
+	var vertices = this.translatedVertecies();
+	var minx = vertices[0].x, maxx = vertices[0].x, miny = vertices[0].y, maxy = vertices[0].y;
+	for (let i = 0; i < vertices.length; i++) {
+		let vertex = vertices[i];
+		maxx = Math.max(maxx, Math.abs(vertex.x));
+		maxy = Math.max(maxy, Math.abs(vertex.y));
+	}
+	return {
+		type: 'circle',
+		radius: Math.max(maxx, maxy),
+		draw: function(ctx, object) {
+			ctx.save();
+			ctx.translate(object.coords.x, object.coords.y);
+			ctx.arc(0, 0, this.raduis, 0, 2 * Math.PI);
+			ctx.strokeStyle = (object.colliding ? 'red' : 'blue');
+			ctx.stroke();
 		}
 	};
 }
@@ -272,6 +300,9 @@ function Asteroid() {
 	this.onCollision = function(other) {
 		this.coords.speed = this.elasticCollision(this, other);
 		this.coords.direction = this.coords.direction - 180;
+	}
+	this.bounds = function() {
+		return this.boundingCircle();
 	}
 	this.elasticCollision = function(m1, m2) {
 		var first = 0;
@@ -389,6 +420,7 @@ function boxCollide(box1, box2) {
 function draw() {
 	var ctx = canvas.getContext("2d");
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
+	debug.draw(ctx);
 	callObjects(objects, o => 'draw' in o, o => o.draw(ctx));
 }
 function callObjects(objects, pred, callback) {
@@ -407,15 +439,14 @@ var canvas = document.getElementById("astors");
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight;
 
-var keys = new Keys();
+var debug = new Debug();
 
 var objects = new Set();
-var debug = new Debug();
-objects.add(debug);
 objects.add(new Ship());
 for (i = 0; i < 10; i++) {
 	objects.add(new Asteroid());
 }
+var keys = new Keys(new Set([ objects, [ debug ] ]));
 
 init();
 setInterval(run, 10);
