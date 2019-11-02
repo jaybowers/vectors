@@ -196,11 +196,11 @@ VectorObject.prototype.boundingCircle = function() {
 	};
 }
 function Asteroid(
-	x = randomInt( 0, canvas.width ),
-	y = randomInt( 0, canvas.height ),
-	rotation = randomInt( 0, 360 ),
-	direction = randomInt( 0, 360 ),
-	speed = Math.random()
+		x = randomInt( 0, canvas.width ),
+		y = randomInt( 0, canvas.height ),
+		rotation = randomInt( 0, 360 ),
+		direction = randomInt( 0, 360 ),
+		speed = Math.random()
 	) {
 	var radius = 50;
 	var vertices = [];
