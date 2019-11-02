@@ -22,12 +22,12 @@ const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;
 
 // The maximum is inclusive and the minimum is inclusive 
-function getRandomIntInclusive(min, max) {
+function randomInt(min, max) {
   var min = Math.ceil(min);
   var max = Math.floor(max);
   return Math.floor(Math.random() * (max - min + 1)) + min;
 }
-function getRandomFloatInclusive(min, max) {
+function randomFloat(min, max) {
   var min = Math.ceil(min);
   var max = Math.floor(max);
   return Math.random() * (max - min + 1) + min;
@@ -295,17 +295,17 @@ VectorObject.prototype.boundingCircle = function() {
 	};
 }
 function Asteroid(
-	x = getRandomIntInclusive( 0, canvas.width ),
-	y = getRandomIntInclusive( 0, canvas.height ),
-	rotation = getRandomIntInclusive( 0, 360 ),
-	direction = getRandomIntInclusive( 0, 360 ),
+	x = randomInt( 0, canvas.width ),
+	y = randomInt( 0, canvas.height ),
+	rotation = randomInt( 0, 360 ),
+	direction = randomInt( 0, 360 ),
 	speed = Math.random()
 	) {
 	var radius = 50;
 	var vertices = [];
-	for (let angle = 0; angle < 360; angle += getRandomIntInclusive(30, 90)) {
-		let x = (radius + getRandomIntInclusive(-10, +10)) * Math.cos( angle * DEG_TO_RAD );
-		let y = (radius + getRandomIntInclusive(-10, +10)) * Math.sin( angle * DEG_TO_RAD );
+	for (let angle = 0; angle < 360; angle += randomInt(30, 90)) {
+		let x = (radius + randomInt(-10, +10)) * Math.cos( angle * DEG_TO_RAD );
+		let y = (radius + randomInt(-10, +10)) * Math.sin( angle * DEG_TO_RAD );
 		vertices.push( new Vertex(x, y) );
 	}
 	VectorObject.call(this, new Coords(
@@ -315,7 +315,7 @@ function Asteroid(
 		direction,
 		speed
 	), vertices, 500);
-	this.rotation_speed = getRandomFloatInclusive( -1, 1 );
+	this.rotation_speed = randomFloat( -1, 1 );
 	this.moveObject = function() {
 		Object.getPrototypeOf(Asteroid.prototype).moveObject.call(this);
 		this.coords.rotate(this.rotation_speed);
