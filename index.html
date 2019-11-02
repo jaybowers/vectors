@@ -97,6 +97,8 @@ function Vector(magnitude, direction) {
 	};
 }
 /*
+ Coords
+
  Describes where the object is on the 2D plane
 */
 function Coords(x, y, rotation, direction, speed) {
@@ -140,6 +142,11 @@ function Coords(x, y, rotation, direction, speed) {
 		return new Coords(this.x, this.y, this.rotation, this.direction, this.speed);
 	}
 }
+/*
+ VectorObject
+
+ Base class for objects in the world.
+*/
 function VectorObject(coords, vertices, mass) {
 	this.coords = coords;
 	this.vertices = vertices;
@@ -314,8 +321,8 @@ function Asteroid(
 		this.coords.rotate(this.rotation_speed);
 	}
 	this.onCollision = function(other) {
-		this.coords.speed = this.elasticCollision(this, other);
-		this.coords.direction = this.coords.direction - 180;
+		this.coords.applyForce(other.coords.direction, other.coords.speed);
+		other.coords.applyForce(this.coords.direction, this.coords.speed);
 	}
 	this.bounds = function() {
 		return this.boundingCircle();
@@ -327,6 +334,11 @@ function Asteroid(
 		}
 		return first
 			+ ( ( 2 * m2.mass) / ( m1.mass + m2.mass ) * m2.coords.speed )
+	}
+	this.billardBallCollision = function(o1, o2) {
+		// work out center of mass connecting line
+		var length = o1.coords.x - o2.coords.x;
+		var height = o1.coords.y - o2.coords.y;
 	}
 }
 Asteroid.prototype = Object.create(VectorObject.prototype);
@@ -490,8 +502,8 @@ for (i = 0; i < 10; i++) {
 var keys = new Keys(new Set([ ...objects, ...[ debug ] ]));
 
 init();
-setInterval(run, 10);
-setInterval(draw, 10);
+setInterval(run, 100);
+setInterval(draw, 100);
 
 </script>
 
