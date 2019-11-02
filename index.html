@@ -24,39 +24,18 @@
 <script type="text/javascript" src="engine.js"></script>
 <script>
 
-function Debug()  {
-	this.on = false;
-	this.onKeys = function(keys) {
-		if (keys.pressed('d')) {
-			this.on = ! this.on;
-		}
-	}
-	this.draw = function(ctx) {
-		if (this.on) {
-			ctx.fillText(
-			   	  'canvas.height = ' + canvas.height
-				+ ' canvas.width = ' + canvas.width,
-			12, 12);
-			callObjects(objects, o => 'debug' in o, o => o.debug(ctx));
-		}
-	} 
-}
-
 var canvas = document.getElementById("astors");
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight;
 
 var objects = new Set();
 objects.add(new Ship());
-objects.add(new Debug());
 for (i = 0; i < 10; i++) {
 	objects.add(new Asteroid());
 }
 
-var keys = new Keys(objects);
-keys.init();
-setInterval(run, 100);
-setInterval(draw, 10);
+var engine = new Engine(objects);
+engine.start();
 
 </script>
 
