@@ -59,7 +59,6 @@ function circleCircleCollide(circle1, circle2) {
 function draw() {
 	var ctx = canvas.getContext("2d");
 	ctx.clearRect(0, 0, canvas.width, canvas.height);
-	debug.draw(ctx);
 	callObjects(objects, o => 'draw' in o, o => o.draw(ctx));
 }
 function callObjects(objects, pred, callback) {

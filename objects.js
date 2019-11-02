@@ -59,6 +59,8 @@ function VectorObject(coords, vertices, mass) {
 	}
 }
 VectorObject.prototype.debug = function( ctx ) {
+	this.bounds().draw(ctx);
+
 	var coords = this.coords;
 	ctx.save();
 	ctx.translate( coords.x, coords.y );
@@ -90,9 +92,6 @@ VectorObject.prototype.draw = function( ctx ) {
 	ctx.rotate( degToRad(rotation) );
 	this.drawObject( ctx, this.vertices );
 	ctx.restore();
-	if (debug.on) {
-		this.bounds().draw(ctx);
-	}
 }
 VectorObject.prototype.moveObject = function() {
 	var coords = this.coords;

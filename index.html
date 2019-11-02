@@ -42,27 +42,21 @@ function Debug()  {
 	} 
 }
 
-function init() {
-}
-
 var canvas = document.getElementById("astors");
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight;
 
-var debug = new Debug();
-
 var objects = new Set();
 objects.add(new Ship());
+objects.add(new Debug());
 for (i = 0; i < 10; i++) {
 	objects.add(new Asteroid());
 }
-//objects.add(new Asteroid());
 
-var keys = new Keys(new Set([ ...objects, ...[ debug ] ]));
-
+var keys = new Keys(objects);
 keys.init();
 setInterval(run, 100);
-setInterval(draw, 100);
+setInterval(draw, 10);
 
 </script>
 
