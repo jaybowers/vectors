@@ -24,6 +24,24 @@
 <script type="text/javascript" src="engine.js"></script>
 <script>
 
+function Debug()  {
+	this.on = false;
+	this.keydown = function (event) {
+		if (event.key == 'd') {
+			this.on = ! this.on;
+		}
+	}
+	this.draw = function(ctx) {
+		if (this.on) {
+			ctx.fillText(
+			   	  'canvas.height = ' + canvas.height
+				+ ' canvas.width = ' + canvas.width,
+			12, 12);
+			callObjects(objects, o => 'debug' in o, o => o.debug(ctx));
+		}
+	} 
+}
+
 var canvas = document.getElementById("astors");
 canvas.width  = window.innerWidth;
 canvas.height = window.innerHeight;
