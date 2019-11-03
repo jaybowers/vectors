@@ -17,7 +17,7 @@ function Debug()  {
 }
 
 function Engine(objects) {
-	this.keys = new Keys();
+	this.keys = new Keys(objects);
 	objects.add(new Debug());
 	this.objects = objects;
 	_engine = this;
