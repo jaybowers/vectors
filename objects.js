@@ -31,8 +31,7 @@ function Coords(x, y, rotation, direction, speed) {
 		}
 		return degrees;
 	}
-	this.applyForce = function(direction, amount) {
-		var forceVector = new Vector(amount, direction);
+	this.applyForce = function(forceVector) {
 		var currentVector = new Vector(this.speed, this.direction);
 
 		var newVector = currentVector.add(forceVector);
@@ -49,11 +48,12 @@ function Coords(x, y, rotation, direction, speed) {
 
  Base class for objects in the world.
 */
-function VectorObject(coords, vertices, mass) {
+function VectorObject(coords, vertices, mass, id = "") {
 	this.coords = coords;
 	this.vertices = vertices;
 	this.mass = mass;
 	this.colliding = null;
+	this.id = id;
 	this.bounds = function() {
 		return this.boundingBox();
 	}
@@ -62,14 +62,19 @@ VectorObject.prototype.debug = function( ctx ) {
 	this.bounds().draw(ctx);
 
 	var coords = this.coords;
+	var id = this.id ? this.id : "";
 	ctx.save();
 	ctx.translate( coords.x, coords.y );
 	ctx.fillText(
 			   'x = ' + coords.x.toFixed(1)
 			+ ' y = ' + coords.y.toFixed(1)
-			+ ' rotation = ' + coords.rotation.toFixed(2)
-			+ ' speed = ' + coords.speed.toFixed(2)
-			+ ' direction = ' + coords.direction.toFixed(2), -50, 50);
+//			+ ' rotation = ' + coords.rotation.toFixed(2)
+			, -50, 50);
+	ctx.fillText(
+			  ' speed = ' + coords.speed.toFixed(2)
+			+ ' direction = ' + coords.direction.toFixed(2)
+			, -50, 60);
+	ctx.fillText(id, -5, 5);
 	ctx.restore();
 }
 VectorObject.prototype.drawObject = function( ctx, vertices, strokeStyle = 'black' ) {
@@ -200,7 +205,8 @@ function Asteroid(
 		y = randomInt( 0, canvas.height ),
 		rotation = randomInt( 0, 360 ),
 		direction = randomInt( 0, 360 ),
-		speed = Math.random()
+		speed = randomFloat( 0, 5 ),
+		name = "unknown"
 	) {
 	var radius = 50;
 	var vertices = [];
@@ -215,15 +221,17 @@ function Asteroid(
 		rotation,
 		direction,
 		speed
-	), vertices, 500);
+	), vertices, 500, name);
 	this.rotation_speed = randomFloat( -1, 1 );
 	this.moveObject = function() {
 		Object.getPrototypeOf(Asteroid.prototype).moveObject.call(this);
 		this.coords.rotate(this.rotation_speed);
 	}
 	this.onCollision = function(other) {
-		this.coords.applyForce(other.coords.direction, other.coords.speed);
-		other.coords.applyForce(this.coords.direction, this.coords.speed);
+		let origDirection = this.coords.direction;
+		let origSpeed = this.coords.speed;
+		other.coords.applyForce(new Vector(this.coords.speed, this.coords.direction));
+		this.coords.applyForce(new Vector(-this.coords.speed, this.coords.direction));
 	}
 	this.bounds = function() {
 		return this.boundingCircle();
@@ -278,7 +286,7 @@ function Ship() {
 	}
 	this.thrust = function() {
     	var coords = this.coords;
-		coords.applyForce(coords.rotation, 0.1);
+		coords.applyForce(new Vector(0.1, coords.rotation));
 	}
     this.fire = function() {
     	var coords = this.coords;

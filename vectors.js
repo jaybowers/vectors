@@ -9,7 +9,7 @@ function Vertex(x, y) {
  Having direction as well as magnitude, especially as determining the position of one point in space relative to another
 */
 function Vector(magnitude, direction) {
-	this.magnitude =  magnitude;
+	this.magnitude = magnitude;
 	this.direction = direction;
 	this.x = this.magnitude * Math.cos( degToRad( this.direction ) );
 	this.y = this.magnitude * Math.sin( degToRad( this.direction ) );
@@ -17,11 +17,23 @@ function Vector(magnitude, direction) {
 		var sx = this.x,
 		    sy = this.y;
 
-		var rx = sx + other.x;
-		var ry = sy + other.y;
+		var rx = sx + other.x,
+		    ry = sy + other.y;
 
-		var magnitude = Math.sqrt( (rx * rx) + (ry * ry) );
-		var direction = Math.atan2( ry, rx ) * RAD_TO_DEG;
+		var magnitude = Math.sqrt( (rx * rx) + (ry * ry) ),
+		    direction = radToDeg( Math.atan2( ry, rx ) );
+
+		return new Vector(magnitude, direction);
+	};
+	this.subtract = function (other) {
+		var sx = this.x,
+		    sy = this.y;
+
+		var rx = sx - other.x,
+		    ry = sy - other.y;
+
+		var magnitude = Math.sqrt( (rx * rx) + (ry * ry) ),
+		    direction = radToDeg( Math.atan2( ry, rx ) );
 
 		return new Vector(magnitude, direction);
 	};
