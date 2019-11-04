@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>Collisions 1</title>
+    <style>
+    	* { padding: 0; margin: 0; }
+    	canvas { background: #eee; display: block; margin: 0 auto; }
+    	html, body {
+  			width:  100%;
+  			height: 100%;
+  			margin: 0px;
+		}
+    </style>
+</head>
+<body>
+
+<canvas id="astors"></canvas>
+
+<script type="text/javascript" src="maths.js"></script>
+<script type="text/javascript" src="keys.js"></script>
+<script type="text/javascript" src="vectors.js"></script>
+<script type="text/javascript" src="objects.js"></script>
+<script type="text/javascript" src="engine.js"></script>
+<script>
+
+var canvas = document.getElementById("astors");
+canvas.width  = window.innerWidth;
+canvas.height = window.innerHeight;
+
+var objects = new Set();
+objects.add(new Asteroid(
+		x = (canvas.width / 2) - 75,
+		y = canvas.height / 2,
+		rotation = 0,
+		direction = 0,
+		speed = 1,
+		name = "l"
+));
+objects.add(new Asteroid(
+		x = (canvas.width / 2) + 100,
+		y = canvas.height / 2,
+		rotation = 0,
+		direction = 0,
+		speed = 0,
+		name = "r"
+));
+
+var engine = new Engine(objects);
+engine.start();
+
+</script>
+
+</body>
+</html>
